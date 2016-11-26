@@ -69,7 +69,7 @@ char debugString[20];
 char buffer2[16];
 char IndBuf[16];*/
 char lcdInitBuffer[25];
-//char lcdBuffer[4][20];
+char lcdBuffer[4][20];
 int lcdBufferHash[4];
 uint8_t uiTempButtons;
 uint8_t buttonPushed;
