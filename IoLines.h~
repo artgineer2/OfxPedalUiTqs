@@ -1,0 +1,66 @@
+/*
+ * IoLines.h
+ *
+ *  Created on: Jan 14, 2016
+ *      Author: mike
+ */
+
+#ifndef IOLINES_H_
+#define IOLINES_H_
+
+//#include "macros.h"
+
+
+/*** PORTA ***/
+// button lines
+
+/*** PORTB ***/
+#define BUTTON_PUSHED		7
+#define LCD_RS		6
+#define LCD_RW		5
+#define LCD_E		4
+#define MCU_MISO 	3
+#define MCU_MOSI 	2
+#define MCU_SCLK 	1
+#define MCU_nCS  	0
+
+/*** PORTC ***/
+// LCD data lines
+
+/*** PORTD ***/
+// Compute modules
+#define CM2_RDY 	7 // OfxMain is running on Compute Modules and ready to receive data
+#define CM2_RUN		6 // Connected to Compute Module reset pin.  Set high to run CM.
+#define CM1_RDY		5
+#define CM1_RUN		4
+#define CM0_RDY		3
+#define CM0_RUN		2
+#define ROT_A		1
+#define ROT_B		0
+
+/*** PORTE ***/
+#define	CM2_DATA_RXED	7 // ACTIVE HIGH:CPU has read/processed data in its shared memory section.
+#define CM1_DATA_RXED	6
+#define CM0_DATA_RXED	5
+#define SDCARD_DET	4
+#define SDCARD_nCS	3
+#define SDCARD_SCLK 2
+#define SDCARD_MOSI 1
+#define SDCARD_MISO 0
+
+
+/*** PORTF ***/
+#define	FOOTSWITCH2	7
+#define	FOOTSWITCH1	6
+#define CM1_nSIG_BYPASS 5
+#define	ETHER_nRST	4
+#define	MCU_DATA_RDY	3 // enable shared memory access for MCU
+#define	CM2_DATA_RDY	2 // ACTIVE LOW:data in shared memory section is ready for corresponding CPU
+#define	CM1_DATA_RDY	1
+#define	CM0_DATA_RDY	0
+
+/*** PORTG ***/
+
+
+
+#endif /* IOLINES_H_ */

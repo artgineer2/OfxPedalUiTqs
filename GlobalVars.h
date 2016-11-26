@@ -56,6 +56,7 @@ uint8_t state_change,model_change,effect_change,param_change,value_change,LCD_ch
 uint8_t menuLevel;
 uint8_t valueChange;
 uint8_t comboChange;
+uint8_t newCombo;
 /*struct {
 	char file[20];
 	char function[20];
@@ -72,6 +73,7 @@ char lcdInitBuffer[25];
 char lcdBuffer[4][20];
 int lcdBufferHash[4];
 uint8_t uiTempButtons;
+
 uint8_t buttonPushed;
 uint8_t buttonReleased;
 uint8_t buttonDebounceCount;

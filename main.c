@@ -194,6 +194,7 @@ void main(void)
 	 uiChange = 0;
 	 valueString[4] = 0;
 	 powerOffSignal = 0;
+	 newCombo = 0;
 	 strncpy(testNode.abbr, "ABBR", 5);
 	 strncpy(testNode.name, "nodeName", 11);
 
@@ -306,7 +307,7 @@ void main(void)
 
 	 while(powerOffSignal == 0) //while((PINE & (BIT(CM_RUNNING0))) != 0)
 	 {
-		 processPedalUI(buttonPushed);
+		 processPedalUI();
 		 delay(20000);
 
 			//****************************************************************************
@@ -319,7 +320,7 @@ void main(void)
 		{
 			jsonBuffer2UiMenu();
 			loadMenu = 2;
-			processPedalUI(BIT(CHANGE_COMBO));
+			processPedalUI();
 		}
 
 		if (LCD_change == 1)
