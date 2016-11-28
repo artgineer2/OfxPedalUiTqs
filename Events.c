@@ -295,6 +295,7 @@ ISR(TIMER0_OVF_vect)
 		buttonPushed = 0;
 		//buttonPushed = uiTempButtons;
 		uiTempButtons = 0;
+
 		buttonDebounceCount = 0;
 	}
 
@@ -314,11 +315,11 @@ ISR(TIMER0_OVF_vect)
 	}
 
 	// ******************** Host/Pedal UI switch ****************************
-	if((PINA & BIT(7)) == BIT(7)) //Host GUI
+	/*if((PINA & BIT(7)) == BIT(7)) //Host GUI
 	{
 		hostUiActive = 1;
 	}
-	else // Pedal UI
+	else // Pedal UI*/
 	{
 		hostUiActive = 0;
 	}

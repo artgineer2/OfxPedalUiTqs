@@ -532,7 +532,7 @@ void getCombo(uint8_t index)
 	requestStatus = 0;
 	//parse combo data into node array
 	//clearSerialRam(0, 0, 1000);
-	menuLevel = 1;
+	menuLevel = 0;
 	loadMenu = 1;
 
 	//LCD_change = 1;
@@ -581,6 +581,10 @@ void processPedalUI()
 			menuLevel = 0;
 			uiChange = 1;
 			//restoreFromHostUiMode = 0;  //change to zero in Rotary Encoder button case statement
+		}
+		else
+		{
+			uiButton = buttonPushed;
 		}
 
 		switch(uiButton)
@@ -686,14 +690,19 @@ void processPedalUI()
 						getCombo(currentComboIndex);
 						restoreFromHostUiMode = 0;
 					}
+					else if(comboIndex != currentComboIndex)
+					{
+						currentComboIndex = comboIndex;
+						getCombo(currentComboIndex);
+					}
 					else
 					{
 						menuLevel = 1;//goDown(0);
-						if(comboIndex != currentComboIndex)
+						/*if(comboIndex != currentComboIndex)
 						{
 							currentComboIndex = comboIndex;
 							getCombo(currentComboIndex);
-						}
+						}*/
 					}
 				}
 				else if(menuLevel == 1)
@@ -728,7 +737,14 @@ void processPedalUI()
 					strncpy(lcdBuffer[0], nodeArray[currentComboNodeArrayIndex].name,10);
 					//snprintf(lcdBuffer[0],"%d:%s", menuLevel, nodeArray[currentComboNodeArrayIndex].name, 20);
 					//sprintf(lcdBuffer[2],"loadMenu: %d", loadMenu);
-
+					if(comboIndex == currentComboIndex)
+					{
+						strncpy(lcdBuffer[2], ofxMainStatusString,19);
+					}
+					else
+					{
+						lcdBuffer[2][0] = 0;
+					}
 					strncpy(lcdBuffer[3], " Save",6);//nodeArray[currentComboNodeArrayIndex].name,10);
 					//snprintf(lcdBuffer[3]," Save",6);
 					break;
@@ -805,6 +821,8 @@ void processPedalUI()
 			uiChange = 0;
 
 			LCD_change = 1;
+			newCombo = 0;
+
 		}
 
 		//breakButton(1);
@@ -910,12 +928,12 @@ void updateStatus(void)
 	{
 		strtok(parsedCurrentDataString[1],":");
 		strncpy(tempOfxMainStatusString,strtok(NULL,"\0"),15);
-		if(strlen(tempOfxMainStatusString) > 2)
+		if(strlen(tempOfxMainStatusString) > 2 && strncmp(tempOfxMainStatusString, ofxMainStatusString,15) != 0)
 		{
 			strncpy(ofxMainStatusString, tempOfxMainStatusString, 15);
-			LCD_change = 1;
+			uiChange = 1;//LCD_change = 1;
 		}
-		strncpy(lcdBuffer[2], ofxMainStatusString,19);
+		//strncpy(lcdBuffer[2], ofxMainStatusString,19);
 
 	}
 	else if(lcdBuffer[2][0] != 0)

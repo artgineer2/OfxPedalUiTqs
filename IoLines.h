@@ -78,7 +78,7 @@
 #define	USB_GP0_SPI_CONTROL_RQST	0
 
 /*** PORTG ***/
-#define nPOWER_OFF 3 // change back to 0 for other boards.  Pin 0 was fried on first board.
+#define nPOWER_OFF 0 // change back to 0 for other boards.  Pin 0 was fried on first board.
 #define MCU_POWER_CONTROL 1
 #define CMX_RUN 2
 

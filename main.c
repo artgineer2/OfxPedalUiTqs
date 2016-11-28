@@ -194,7 +194,7 @@ void main(void)
 	 uiChange = 0;
 	 valueString[4] = 0;
 	 powerOffSignal = 0;
-	 newCombo = 0;
+	 newCombo = 1;
 	 strncpy(testNode.abbr, "ABBR", 5);
 	 strncpy(testNode.name, "nodeName", 11);
 

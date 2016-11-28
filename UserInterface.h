@@ -40,7 +40,7 @@ void DisplayStatus(uint8_t *line3);
 void getComboName(uint8_t index);
 void getCombo(uint8_t index);
 void saveCombo(void);
-void processPedalUI();
+void processPedalUI(void);
 void updateParamValues(void);
 void updateStatus(void);
 #endif /* USERINTERFACE_H_ */
