@@ -274,55 +274,59 @@ ISR(TIMER0_OVF_vect)
 	}*/
 	/************************ BUTTON DEBOUNCE AND READ **************************/
 #if 1
-	if((PINA & 0x7F) != 0) // for de-bouncing switches
+	if((hostUiActive == 0) && (restoreFromHostUiMode == 0))
 	{
-		if(buttonDebounceCount == 0)
+		if((PINA & 0x7F) != 0) // for de-bouncing switches
 		{
-			//buttonDebounceCount++;
+			if(buttonDebounceCount == 0)
+			{
+				//buttonDebounceCount++;
+				buttonPushed = 0;
+				uiTempButtons = 0;
+			}
+			else if(buttonDebounceCount < 2)
+			{
+				buttonPushed = PINA;
+				//uiTempButtons = PINA;
+
+			}
+			buttonDebounceCount++;
+		}
+		else
+		{
 			buttonPushed = 0;
+			//buttonPushed = uiTempButtons;
 			uiTempButtons = 0;
+
+			buttonDebounceCount = 0;
 		}
-		else if(buttonDebounceCount < 2)
+
+		if(((PING & BIT(MCU_POWER_CONTROL)) == 0) )
 		{
-			buttonPushed = PINA;
-			//uiTempButtons = PINA;
+			powerOffCount++;
+			if((powerOffCount > 100) && (powerOffEnable == 1))
+			{
+				// power off routine
 
+				powerOffSignal = 1;
+			}
 		}
-		buttonDebounceCount++;
-	}
-	else
-	{
-		buttonPushed = 0;
-		//buttonPushed = uiTempButtons;
-		uiTempButtons = 0;
-
-		buttonDebounceCount = 0;
-	}
-
-	if((PING & BIT(MCU_POWER_CONTROL)) == 0)
-	{
-		powerOffCount++;
-		if(powerOffCount > 100)
+		else
 		{
-			// power off routine
-
-			powerOffSignal = 1;
+			powerOffCount = 0;
 		}
 	}
-	else
-	{
-		powerOffCount = 0;
-	}
+
 
 	// ******************** Host/Pedal UI switch ****************************
 	/*if((PINA & BIT(7)) == BIT(7)) //Host GUI
 	{
 		hostUiActive = 1;
 	}
-	else // Pedal UI*/
+	else // Pedal UI
 	{
 		hostUiActive = 0;
-	}
+	}*/
 	/**********************************************************************
 	 *
 	 * 	Footswitches
@@ -368,7 +372,6 @@ ISR(TIMER0_OVF_vect)
 				fsw2.physicalStatus = 0;
 			}
 		}
-
 
 		if(fsw1.value) PORTD &= ~BIT(FSW1_LED);
 		else PORTD |= BIT(FSW1_LED);

@@ -153,7 +153,7 @@ void main(void)
 	 buttonPushed = 0;
 	 nodeArrayIndex = 0;
 	 computeModuleDataRetrievalState = 0;
-
+	 powerOffEnable = 0;
 	 computeModuleDataSendState = 0;
 
 	 computeModuleDataProcessingState = 0;
@@ -305,8 +305,10 @@ void main(void)
 
 	 getCombo(0);
 
+	 powerOffEnable = 1;
 	 while(powerOffSignal == 0) //while((PINE & (BIT(CM_RUNNING0))) != 0)
 	 {
+
 		 processPedalUI();
 		 delay(20000);
 

@@ -506,6 +506,7 @@ void getComboName(uint8_t index)
 
 void getCombo(uint8_t index)
 {
+	powerOffEnable = 0;
 	debugString[0] = '1';
 	//strcpy(nodeArray[0].name, comboTitle[index]);
 	//send "getCombo" request to OfxMain via shared memory
@@ -534,12 +535,13 @@ void getCombo(uint8_t index)
 	//clearSerialRam(0, 0, 1000);
 	menuLevel = 0;
 	loadMenu = 1;
-
+	powerOffEnable = 1;
 	//LCD_change = 1;
 }
 
 void saveCombo(void)
 {
+	powerOffEnable = 0;
 	clearBuffer(sendBuffer,50);
 	strncpy(sendBuffer, "saveCombo", 9);
 	sendBuffer[49] = 255;
@@ -555,6 +557,7 @@ void saveCombo(void)
 	strncpy(lcdBuffer[2],"saving combo", 12);
 	strncpy(ofxMainStatusString,"saving combo", 12);
 	Display(0,0,0,0);
+	powerOffEnable = 1;
 	//while(requestStatus < 4); // wait for response to listCombos request
 	//requestStatus = 0;
 }
@@ -743,7 +746,7 @@ void processPedalUI()
 					}
 					else
 					{
-						lcdBuffer[2][0] = 0;
+						ofxMainStatusString[0] = 0;
 					}
 					strncpy(lcdBuffer[3], " Save",6);//nodeArray[currentComboNodeArrayIndex].name,10);
 					//snprintf(lcdBuffer[3]," Save",6);
@@ -865,8 +868,9 @@ void processPedalUI()
     			getValueString(nodeArray[currentNodeArrayIndex].value, nodeArray[currentNodeArrayIndex].valueType));*/
 			//clearBuffer(lcdBuffer[2],20); // shouldn't need this but contents of lcdBuffer 1 end up in lcdBuffer 2, also.
 			/********* send value update request to CM ***************
-			valueChange = 1;
+
 			/**********************************************************/
+			valueChange = 1;
 			LCD_change = 1;
 		}
 	}
@@ -909,10 +913,6 @@ void updateStatus(void)
 	//sprintf(lcdBuffer[2],"index:%d current:%d", comboIndex, currentComboIndex);
 
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
-
-
-
-
 
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
 	/*strtok(parsedCurrentDataString[1],":");

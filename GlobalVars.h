@@ -79,6 +79,7 @@ uint8_t buttonReleased;
 uint8_t buttonDebounceCount;
 uint8_t rotaryValue;
 uint8_t powerOffSignal;
+uint8_t powerOffEnable;
 char valueString[5];
 /*char fsw1Abbr[5];
 char fsw2Abbr[5];*/
