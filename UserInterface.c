@@ -19,11 +19,11 @@
 
 typedef uint8_t uint8_t;
 extern void clearBuffer(char *buffer, int length);
-extern void clearBuffer(char *buffer, int length);
+//extern void clearBuffer(char *buffer, int length);
 
 #define dbgUi 0
 extern const char *testJson;
-uint8_t uiBtn;
+//uint8_t uiBtn;
 
 /*static void breakButtonUi(char *buffer1, char *buffer2, char *buffer3, char *buffer4)
 {
@@ -445,9 +445,9 @@ uint8_t goDown(uint8_t index)
 		menuLevel++;
 
 		if(menuLevel == 2) // effect
-				{
+		{
 			currentEffectNodeArrayIndex = currentNodeArrayIndex;
-				}
+		}
 		else if(menuLevel == 3) // param
 		{
 			currentParamNodeArrayIndex = currentNodeArrayIndex;
@@ -495,6 +495,42 @@ void getValueString(uint8_t valueIndex, uint8_t valueType, char *valueStr)
 	//return valueStr;
 }
 
+void updateSoftKeyLabels(void)
+{
+	uint8_t  tempNodeIndexArray = nodeArray[currentNodeArrayIndex].down;
+
+	if(tempNodeIndexArray != 255) // fill soft key LCD info
+	{
+		/************* group softkey items into softkeyGroupArray *******************/
+
+		char abbrString[5];
+		if(menuLevel == 0 || menuLevel == 3)
+		{
+			/*strncpy(fsw1Abbr,"fsw1",4);
+	  strncpy(fsw2Abbr,"fsw2",4);
+
+	  sprintf(lcdBuffer[3], "%s|%s", fsw1Abbr, fsw2Abbr);*/
+		}
+		else
+		{
+			uint8_t paramCount = 0;
+			clearBuffer(softkeyString,100);
+			for( ; (tempNodeIndexArray != 255); tempNodeIndexArray = nodeArray[tempNodeIndexArray].right)
+			{
+				fillBuffer(abbrString, nodeArray[tempNodeIndexArray].abbr, 4); //fills in unused bytes with spaces to keep labels aligned with soft keys
+				strncat(softkeyString, abbrString, 4);
+				//strncat(softkeyString, nodeArray[tempNodeIndexArray].abbr, 4);
+				if(nodeArray[tempNodeIndexArray].right != 255) strncat(softkeyString,"|",1);
+				paramCount++;
+			}
+			softkeyStringFrameCount = paramCount/4;
+			//clearBuffer(lcdBuffer[3], 20);
+			strcpy(lcdBuffer[3], " ");
+			strncat(lcdBuffer[3], softkeyString+softkeyStringFrameIndex[menuLevel-1]*20, 19);
+		}
+	}
+
+}
 
 void getComboName(uint8_t index)
 {
@@ -524,12 +560,13 @@ void getCombo(uint8_t index)
 	sharedMemoryRxStartAddress = MCU_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//CM0_SHARED_MEMORY_SECTION_ADDRESS;
 	getResponse = 1;
 	//while(requestStatus != 0);
-	newRequest = 1;
+	newSpiXferRequest = 1;
 	//requestStatus = 1;
-	clearBuffer(lcdBuffer[2],20);
-	strncpy(lcdBuffer[2],"loading combo", 13);
-	Display(0,0,0,0);
-	while(requestStatus < 4); // wait for response to listCombos request
+	//clearBuffer(lcdBuffer[2],20);
+	//strncpy(lcdBuffer[2],"loading combo", 19);
+	strncpy(ofxMainStatusString,"loading combo", 19);
+	//Display(0,0,0,0);
+	while(requestStatus < 4); // wait for response to getCombo request
 	requestStatus = 0;
 	//parse combo data into node array
 	//clearSerialRam(0, 0, 1000);
@@ -539,7 +576,7 @@ void getCombo(uint8_t index)
 	//LCD_change = 1;
 }
 
-void saveCombo(void)
+/*void saveCombo(void)
 {
 	powerOffEnable = 0;
 	clearBuffer(sendBuffer,50);
@@ -549,7 +586,7 @@ void saveCombo(void)
 	sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
 	getResponse = 1;
 
-	newRequest = 1;
+	newSpiXferRequest = 1;
 	//requestStatus = 1;
 	while(requestStatus < 4); // wait for response to listCombos request
 	requestStatus = 0;
@@ -560,27 +597,27 @@ void saveCombo(void)
 	powerOffEnable = 1;
 	//while(requestStatus < 4); // wait for response to listCombos request
 	//requestStatus = 0;
-}
+}*/
 
 uint8_t selectCombo = 100;
 
-void processPedalUI()
+/*void processPedalUI()
 {
 	char string[50];
 
-	uint8_t uiButton;
+	//uint8_t uiButton;
 
-	//static uint8_t uiBtn;
+	static uint8_t uiBtn;
 	if(hostUiActive == 0)
 	{
-		/*clearBuffer(lcdBuffer[0], 20);
-	  clearBuffer(lcdBuffer[1], 20);
-	  clearBuffer(lcdBuffer[2], 20);
-	  clearBuffer(lcdBuffer[3], 20);*/
+//	  clearBuffer(lcdBuffer[0], 20);
+//	  clearBuffer(lcdBuffer[1], 20);
+//	  clearBuffer(lcdBuffer[2], 20);
+//	  clearBuffer(lcdBuffer[3], 20);
 
 		if(restoreFromHostUiMode == 1)
 		{
-			uiButton = BIT(ROTARY_BUTTON);
+			uiBtn = BIT(ROTARY_BUTTON);
 			menuLevel = 0;
 			uiChange = 1;
 			//restoreFromHostUiMode = 0;  //change to zero in Rotary Encoder button case statement
@@ -701,11 +738,11 @@ void processPedalUI()
 					else
 					{
 						menuLevel = 1;//goDown(0);
-						/*if(comboIndex != currentComboIndex)
-						{
-							currentComboIndex = comboIndex;
-							getCombo(currentComboIndex);
-						}*/
+//						if(comboIndex != currentComboIndex)
+//						{
+//							currentComboIndex = comboIndex;
+//							getCombo(currentComboIndex);
+//						}
 					}
 				}
 				else if(menuLevel == 1)
@@ -777,7 +814,7 @@ void processPedalUI()
 					strncpy(lcdInitBuffer, nodeArray[currentNodeArrayIndex].name,15);
 					strncat(lcdInitBuffer,":",1);
 					clearBuffer(valueString,5);
-					valueString,getValueString(nodeArray[currentNodeArrayIndex].value,
+					getValueString(nodeArray[currentNodeArrayIndex].value,
 							nodeArray[currentNodeArrayIndex].valueType, valueString);
 					strncat(lcdInitBuffer, valueString ,4);
 					strncpy(lcdBuffer[1],lcdInitBuffer,19);
@@ -789,38 +826,35 @@ void processPedalUI()
 			//buttonPushed = 0;
 			//clearBuffer(lcdBuffer[3], 20);
 
-			uint8_t  tempNodeIndexArray = nodeArray[currentNodeArrayIndex].down;
-
-			if(tempNodeIndexArray != 255) // fill soft key LCD info
-			{
-				/************* group softkey items into softkeyGroupArray *******************/
-
-				char abbrString[5];
-				if(menuLevel == 0 || menuLevel == 3)
-				{
-					/*strncpy(fsw1Abbr,"fsw1",4);
-    		  strncpy(fsw2Abbr,"fsw2",4);
-
-    		  sprintf(lcdBuffer[3], "%s|%s", fsw1Abbr, fsw2Abbr);*/
-				}
-				else
-				{
-					uint8_t paramCount = 0;
-					clearBuffer(softkeyString,100);
-					for( ; (tempNodeIndexArray != 255); tempNodeIndexArray = nodeArray[tempNodeIndexArray].right)
-					{
-						fillBuffer(abbrString, nodeArray[tempNodeIndexArray].abbr, 4); //fills in unused bytes with spaces to keep labels aligned with soft keys
-						strncat(softkeyString, abbrString, 4);
-						//strncat(softkeyString, nodeArray[tempNodeIndexArray].abbr, 4);
-						if(nodeArray[tempNodeIndexArray].right != 255) strncat(softkeyString,"|",1);
-						paramCount++;
-					}
-					softkeyStringFrameCount = paramCount/4;
-					//clearBuffer(lcdBuffer[3], 20);
-					strcpy(lcdBuffer[3], " ");
-					strncat(lcdBuffer[3], softkeyString+softkeyStringFrameIndex[menuLevel-1]*20, 19);
-				}
-			}
+			updateSoftKeyLabels();
+//			uint8_t  tempNodeIndexArray = nodeArray[currentNodeArrayIndex].down;
+//
+//			if(tempNodeIndexArray != 255) // fill soft key LCD info
+//			{
+//				//************* group softkey items into softkeyGroupArray *******************
+//
+//				char abbrString[5];
+//				if(menuLevel == 0 || menuLevel == 3)
+//				{
+//				}
+//				else
+//				{
+//					uint8_t paramCount = 0;
+//					clearBuffer(softkeyString,100);
+//					for( ; (tempNodeIndexArray != 255); tempNodeIndexArray = nodeArray[tempNodeIndexArray].right)
+//					{
+//						fillBuffer(abbrString, nodeArray[tempNodeIndexArray].abbr, 4); //fills in unused bytes with spaces to keep labels aligned with soft keys
+//						strncat(softkeyString, abbrString, 4);
+//						//strncat(softkeyString, nodeArray[tempNodeIndexArray].abbr, 4);
+//						if(nodeArray[tempNodeIndexArray].right != 255) strncat(softkeyString,"|",1);
+//						paramCount++;
+//					}
+//					softkeyStringFrameCount = paramCount/4;
+//					//clearBuffer(lcdBuffer[3], 20);
+//					strcpy(lcdBuffer[3], " ");
+//					strncat(lcdBuffer[3], softkeyString+softkeyStringFrameIndex[menuLevel-1]*20, 19);
+//				}
+//			}
 			uiChange = 0;
 
 			LCD_change = 1;
@@ -831,47 +865,36 @@ void processPedalUI()
 		//breakButton(1);
 		else if((count_up || count_down) && menuLevel == 3)  // rotary encoder value change
 		{
-
-			strncpy(lcdInitBuffer, nodeArray[currentComboNodeArrayIndex].name,10);
-			strncat(lcdInitBuffer, "->",2);
-			strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
-			strncat(lcdInitBuffer, "->",2);
-			strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
-			strncpy(lcdBuffer[0],lcdInitBuffer,19);
-
-			strncpy(lcdInitBuffer, nodeArray[currentNodeArrayIndex].name,13);
-			strncat(lcdInitBuffer,":",1);
-			/*char intString[4];
-    	sprintf(intString,"%d", nodeArray[currentNodeArrayIndex].paramIndex);
-    	strcat(lcdBuffer[1],intString);
-		strcat(lcdBuffer[1], ":");*/
-			clearBuffer(valueString,5);
-			/*strncpy(valueString,getValueString(nodeArray[currentNodeArrayIndex].value,
-  	  			nodeArray[currentNodeArrayIndex].valueType),4);*/
-			/*strncpy(valueString,*/getValueString(nodeArray[currentNodeArrayIndex].value,
-					nodeArray[currentNodeArrayIndex].valueType, valueString);
-			strncat(lcdInitBuffer, valueString ,4);
-			strncpy(lcdBuffer[1],lcdInitBuffer,19);
-
-			uint8_t valueIndexMax;
-			if(nodeArray[currentNodeArrayIndex].valueType == 0) valueIndexMax = 99;
-			else if(nodeArray[currentNodeArrayIndex].valueType == 1) valueIndexMax = 74;
-			else if(nodeArray[currentNodeArrayIndex].valueType == 2) valueIndexMax = 99;
-			else if(nodeArray[currentNodeArrayIndex].valueType == 3) valueIndexMax = 99;
-
-			if(count_up == 1 && count_down == 0 && nodeArray[currentNodeArrayIndex].value < valueIndexMax) nodeArray[currentNodeArrayIndex].value++;
-			else if(count_up == 0 && count_down == 1 && nodeArray[currentNodeArrayIndex].value > 0) nodeArray[currentNodeArrayIndex].value--;
-
-			count_up = 0;
-			count_down = 0;
-			/*sprintf(lcdBuffer[1],"%s: %s", nodeArray[currentNodeArrayIndex].name,
-    			getValueString(nodeArray[currentNodeArrayIndex].value, nodeArray[currentNodeArrayIndex].valueType));*/
-			//clearBuffer(lcdBuffer[2],20); // shouldn't need this but contents of lcdBuffer 1 end up in lcdBuffer 2, also.
-			/********* send value update request to CM ***************
-
-			/**********************************************************/
-			valueChange = 1;
-			LCD_change = 1;
+			updateParamValues();
+//			strncpy(lcdInitBuffer, nodeArray[currentComboNodeArrayIndex].name,10);
+//			strncat(lcdInitBuffer, "->",2);
+//			strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
+//			strncat(lcdInitBuffer, "->",2);
+//			strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
+//			strncpy(lcdBuffer[0],lcdInitBuffer,19);
+//
+//			strncpy(lcdInitBuffer, nodeArray[currentNodeArrayIndex].name,13);
+//			strncat(lcdInitBuffer,":",1);
+//			clearBuffer(valueString,5);
+//			getValueString(nodeArray[currentNodeArrayIndex].value,
+//					nodeArray[currentNodeArrayIndex].valueType, valueString);
+//			strncat(lcdInitBuffer, valueString ,4);
+//			strncpy(lcdBuffer[1],lcdInitBuffer,19);
+//
+//			uint8_t valueIndexMax;
+//			if(nodeArray[currentNodeArrayIndex].valueType == 0) valueIndexMax = 99;
+//			else if(nodeArray[currentNodeArrayIndex].valueType == 1) valueIndexMax = 74;
+//			else if(nodeArray[currentNodeArrayIndex].valueType == 2) valueIndexMax = 99;
+//			else if(nodeArray[currentNodeArrayIndex].valueType == 3) valueIndexMax = 99;
+//
+//			if(count_up == 1 && count_down == 0 && nodeArray[currentNodeArrayIndex].value < valueIndexMax) nodeArray[currentNodeArrayIndex].value++;
+//			else if(count_up == 0 && count_down == 1 && nodeArray[currentNodeArrayIndex].value > 0) nodeArray[currentNodeArrayIndex].value--;
+//
+//			count_up = 0;
+//			count_down = 0;
+//
+//			valueChange = 1;
+//			LCD_change = 1;
 		}
 	}
 	else
@@ -888,12 +911,43 @@ void processPedalUI()
 			LCD_change = 1;
 		}
 	}
+}*/
+
+
+uint8_t updateParamValues(void)
+{
+	uint8_t status = 0;
+
+	strncpy(lcdInitBuffer, nodeArray[currentNodeArrayIndex].name,13);
+	strncat(lcdInitBuffer,":",1);
+	clearBuffer(valueString,5);
+	getValueString(nodeArray[currentNodeArrayIndex].value,
+			nodeArray[currentNodeArrayIndex].valueType, valueString);
+	strncat(lcdInitBuffer, valueString ,4);
+	strncpy(lcdBuffer[1],lcdInitBuffer,19);
+
+	uint8_t valueIndexMax;
+	if(nodeArray[currentNodeArrayIndex].valueType == 0) valueIndexMax = 99;
+	else if(nodeArray[currentNodeArrayIndex].valueType == 1) valueIndexMax = 74;
+	else if(nodeArray[currentNodeArrayIndex].valueType == 2) valueIndexMax = 99;
+	else if(nodeArray[currentNodeArrayIndex].valueType == 3) valueIndexMax = 99;
+
+	if(count_up == 1 && count_down == 0 && nodeArray[currentNodeArrayIndex].value < valueIndexMax) nodeArray[currentNodeArrayIndex].value++;
+	else if(count_up == 0 && count_down == 1 && nodeArray[currentNodeArrayIndex].value > 0) nodeArray[currentNodeArrayIndex].value--;
+
+	count_up = 0;
+	count_down = 0;
+	valueChange = 1;
+
+
+	return status;
 }
 
 char parsedCurrentDataString[3][30];
-//void updateParamValues(void)
-void updateStatus(void)
+
+uint8_t updateStatus(void)
 {
+	uint8_t status = 0;
 	//char parsedCurrentDataString[50];
 	char comboIndexString[2];
 	tempHostUiActive = 0;
@@ -924,7 +978,7 @@ void updateStatus(void)
 		nodeArray[paramIndex2nodeArrayIndex[i]].value = atoi(intString);
 	}*/
 
-	if(comboIndex == currentComboIndex && menuLevel == 0)
+	//if(comboIndex == currentComboIndex && menuLevel == 0)
 	{
 		strtok(parsedCurrentDataString[1],":");
 		strncpy(tempOfxMainStatusString,strtok(NULL,"\0"),15);
@@ -936,13 +990,7 @@ void updateStatus(void)
 		//strncpy(lcdBuffer[2], ofxMainStatusString,19);
 
 	}
-	else if(lcdBuffer[2][0] != 0)
-	{
-		lcdBuffer[2][0] = 0;
-		LCD_change = 1;
-	}
-	//LCD_change = 1;
-	//DisplayStatus(lcdBuffer[2]);
+
 
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
 	strtok(parsedCurrentDataString[2],":");
@@ -959,4 +1007,7 @@ void updateStatus(void)
 
 	}
 	for(uint8_t i = 0; i < 100; i++) currentDataString[i] = 0;
+
+	return status;
+
 }

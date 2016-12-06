@@ -16,37 +16,20 @@
 #define RX_BUFFER_SIZE  50
 #define JSON_BUFFER_SIZE 800
 
-/********************** SERIAL TX ************************
-char tx_buffer[TX_BUFFER_SIZE+10];
-unsigned int tx_count;
 
-/********************** SERIAL RX ************************
-char rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_type;
-unsigned long rx_total_high;
-unsigned long rx_total_mid;
-unsigned long rx_total_low;
-unsigned long rx_total;
-unsigned long rx_count;
-unsigned int rx_wait_timer;
-uint8_t rx_in_progress;
 
-unsigned long rx_start_addr_high;
-unsigned long rx_start_addr_mid;
-unsigned long rx_start_addr_low;
-unsigned long rx_start_addr;*/
-
-//#ifndef rx_done
-//uint8_t rx_done = 0;
-//#endif
-
+uint8_t taskQueue[20];
+uint8_t taskWriteIndex;
+uint8_t taskReadIndex;
+uint8_t taskWriteIndexWrappedAround;
+uint8_t periodicTask;
+uint8_t nonperiodicTask;
+uint8_t nextNonperiodicTask;
+uint8_t runTask;
 
 uint8_t main_state;
 uint8_t main_model;
 uint8_t main_section;
-/*unsigned int main_fxcore_address;
-unsigned long main_flash_address;
-unsigned long prev_flash_address;*/
 uint8_t main_fsw;
 uint8_t main_stage;
 uint8_t main_effect;
@@ -66,14 +49,11 @@ uint8_t newCombo;
 /****************** UI LCD and Buttons ***********************/
 char debugString[20];
 
-/*char buffer1[16];
-char buffer2[16];
-char IndBuf[16];*/
 char lcdInitBuffer[25];
 char lcdBuffer[4][20];
 int lcdBufferHash[4];
 uint8_t uiTempButtons;
-
+uint8_t uiButton;
 uint8_t buttonPushed;
 uint8_t buttonReleased;
 uint8_t buttonDebounceCount;
@@ -102,17 +82,13 @@ uint8_t loadMenu;
 uint8_t hostUiActive;
 uint8_t tempHostUiActive;
 uint8_t restoreFromHostUiMode;
-/*struct softkey{
-	char abbr[6];
-	uint8_t arrayNodeIndex;
-};
 
-struct softkey softkeyGroupArray[12];
-uint8_t softkeyGroupArrayIndex[2];*/
 char softkeyString[100];
 uint8_t softkeyStringFrameIndex[2];
 uint8_t softkeyStringFrameCount;
-uint8_t uiChange;
+uint8_t uiChange; 	// 0: no buttons pressed
+					// 1: button pressed, LCD not updated
+					// 2: ??
 char ofxMainStatusString[20];
 /**********************************************************/
 
@@ -126,18 +102,11 @@ uint8_t abbr_buffer[4];
 //uint8_t name_buffer[15];
 
 /******************** Shared Memory **************************/
-/*struct smStatus {
-	uint8_t mcuDataSent;
 
-	uint8_t cmDataQueried;
-	uint8_t cmDataRecieved;
-
-};*/
 uint8_t computeModuleDataRetrievalState;// 0: Idle, 1: Start, 2: In-process, 3: Stop
 											// NOT TO BE CONFUSED WITH CM PROCESSING STATE
 uint8_t computeModuleDataSendState;// 0: Idle, 1: Start, 2: In-process, 3: Stop
 uint8_t computeModuleDataProcessingState; // 0: Idle, 1: Waiting, 2: Done
-//uint8_t computeModuleStatusArray[2];
 
 char *sharedMemoryRxBuffer;//[500];
 uint16_t sharedMemoryRxBufferIndex;
@@ -157,7 +126,7 @@ char jsonBuffer[JSON_BUFFER_SIZE];
 char sendBuffer[50];
 char getCombosBuffer[170];
 uint8_t requestStatus; //0: Idle, 1: Sending Request, 2: Waiting for response, 3: Getting Response, 4:Response Received
-uint8_t newRequest;
+uint8_t newSpiXferRequest;
 uint8_t responseError;
 uint8_t getResponse;
 

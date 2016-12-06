@@ -29,6 +29,8 @@ extern uint8_t rx_done;
 extern void delay(unsigned long delay);
 extern void updateParamValues(void);
 extern void updateStatus(void);
+extern void insertTask(uint8_t taskNumber);
+extern uint8_t getTask(void);
 
 #define DEBOUNCE_DELAY 200
 
@@ -117,54 +119,6 @@ ISR(INT0_vect)
 
 }
 
-/*************************************************
-*             Pin Change Interrupt Handlers
-*************************************************
-//#pragma interrupt_handler PC_Interrupt:3
-ISR(PCINT0_vect) // PCINT 0-7
-{
-
-	//strcpy(lcdBuffer[0], "PCINT0_vect");
-	LCD_change = 1;
-	//  Compute module finished processing data in its section of sharing memory?
-	uint8_t CMIndex = 0;
-
-	CMIndex = 0x07 & (PINE>>5);
-	switch(CMIndex)
-	{
-	case 1:
-		PORTF |= BIT(CM0_DATA_RDY);// set CM0_DATA_RDY line to high (inactive)
-		computeModuleStatusArray[0].cmDataRecieved = 1;// flag CM0 shared memory section for processing
-		break;
-		break;
-	default:;
-	}
-
-}*/
-
-/*ISR(PCINT1_vect) // PCINT 8-15
-{
-
-	//  Button pushed?
-		if(PINA != 0 && buttonPushed == 0)
-		{
-
-			//sprintf(lcdBuffer[0],"button:%d",buttonPushed);
-			//delay(500);
-			buttonPushed = PINA;
-		}
-		else
-		{
-			//buttonPushed = 0;
-		}
-	//  Footswitch pushed?
-		if(PINF & (BIT(FOOTSWITCH1)|BIT(FOOTSWITCH2)))
-		{
-			if(PINF & (BIT(FOOTSWITCH1))) fsw1 = 1;
-			if(PINF & (BIT(FOOTSWITCH2))) fsw2 = 1;
-		}
-
-}*/
 
 
 
@@ -274,7 +228,7 @@ ISR(TIMER0_OVF_vect)
 	}*/
 	/************************ BUTTON DEBOUNCE AND READ **************************/
 #if 1
-	if((hostUiActive == 0) && (restoreFromHostUiMode == 0))
+	/*if((hostUiActive == 0) && (restoreFromHostUiMode == 0))
 	{
 		if((PINA & 0x7F) != 0) // for de-bouncing switches
 		{
@@ -315,7 +269,7 @@ ISR(TIMER0_OVF_vect)
 		{
 			powerOffCount = 0;
 		}
-	}
+	}*/
 
 
 	// ******************** Host/Pedal UI switch ****************************
@@ -327,14 +281,14 @@ ISR(TIMER0_OVF_vect)
 	{
 		hostUiActive = 0;
 	}*/
+#endif
+
+#if 1
 	/**********************************************************************
 	 *
 	 * 	Footswitches
 	 *
 	 **********************************************************************/
-#endif
-
-#if 1
 	if(fswDebounceCount == 0)
 	{
 		if(PIND & BIT(FSW1))
@@ -390,128 +344,47 @@ ISR(TIMER0_OVF_vect)
 	 *
 	 */
 #if 1
-	/*if(hostUiActive == 1) // host PC application not active
-		currentDataUpdateTimer = 0;*/
-
-	if(1)//hostUiActive == 0) // host PC application not active
+	if(requestStatus == 0) // requests are done
 	{
-		if(requestStatus == 0) // requests are done
+		if(restoreFromHostUiMode == 0) // normal pedal UI running mode
 		{
-			if(restoreFromHostUiMode == 0) // normal pedal UI running mode
+			//**************** Updating values from Pedal User Interface ***************
+			/*if(valueChange == 1 && menuLevel == 3)
 			{
-				//**************** Updating values from Pedal User Interface ***************
-				if(valueChange == 1 && menuLevel == 3)
-				{
-					clearBuffer(sendBuffer,50);
-					sendBuffer[49]=255;
-					valueChange = 0;
+				clearBuffer(sendBuffer,50);
+				sendBuffer[49]=255;
+				valueChange = 0;
 
-					{
-						sprintf(sendBuffer, "changeValue:%d=%d", nodeArray[currentNodeArrayIndex].paramIndex,
-								nodeArray[currentNodeArrayIndex].value);
-					}
-					sendBuffer[49] = 255;
-					sharedMemoryTxBuffer = sendBuffer;
-					sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
-					getResponse = 0;
-					//requestStatus = 1;
-					newRequest = 1;
+				{
+					sprintf(sendBuffer, "changeValue:%d=%d", nodeArray[currentNodeArrayIndex].paramIndex,
+							nodeArray[currentNodeArrayIndex].value);
 				}
-				// ******************* getting update from CM ************************
-				else if((currentDataUpdateTimer > CURRENT_DATA_UPDATE_TIMER_THRESHOLD))
-				{
-					clearBuffer(sendBuffer,50);
-					sendBuffer[49]=255;
-					strcpy(sendBuffer,"getCurrentStatus");//strcpy(sendBuffer,"getCurrentValues");
-					sharedMemoryRxBuffer = currentDataString;  // set sharedMemory pointer to currentDataString
-					sharedMemoryRxStartAddress = MCU_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;
-					sharedMemoryTxBuffer = sendBuffer;
-					sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
-					getResponse = 1;
-					//requestStatus = 1;
-					newRequest = 1;
-					currentDataUpdateTimer = 0;
-				}
-
-				/*else if((PINF & BIT(USB_GP0_SPI_CONTROL_RQST)) == BIT(USB_GP0_SPI_CONTROL_RQST))
-				// host PC application just turned on
-				{
-					//**************** Updating values from Host PC User Interface ***************
-					currentDataUpdateTimer = 0;
-					hostUiActive = 1;
-
-					PORTF |= BIT(USB_GP1_SPI_CONTROL_GRANTED);
-
-					//******************************************************************************
-					// * make sure USB takes control back (USB input pin changed to high output pin)
-					 //* before MCU releases it (MCU high output pin changed to input pin).
-					 //*
-					 //*****************************************************************************
-
-					disableMcuSharedMemorySectionAccess();
-					enableUsbSharedMemoryAccess();
-				}*/
-				currentDataUpdateTimer++;
+				sendBuffer[49] = 255;
+				sharedMemoryTxBuffer = sendBuffer;
+				sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
+				getResponse = 0;
+				//requestStatus = 1;
+				newSpiXferRequest = 1;
 			}
+			// ******************* getting update from CM ************************
+			else if((currentDataUpdateTimer > CURRENT_DATA_UPDATE_TIMER_THRESHOLD))
+			{
+				clearBuffer(sendBuffer,50);
+				sendBuffer[49]=255;
+				strcpy(sendBuffer,"getCurrentStatus");//strcpy(sendBuffer,"getCurrentValues");
+				sharedMemoryRxBuffer = currentDataString;  // set sharedMemory pointer to currentDataString
+				sharedMemoryRxStartAddress = MCU_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;
+				sharedMemoryTxBuffer = sendBuffer;
+				sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
+				getResponse = 1;
+				//requestStatus = 1;
+				newSpiXferRequest = 1;
+				currentDataUpdateTimer = 0;
+			}*/
+
+			//currentDataUpdateTimer++;
 		}
 	}
-	else // host PC application active
-	{
-		currentDataUpdateTimer = 0;
-		// requestStatus should be 0, here
-		/*if((PINF & BIT(USB_GP0_SPI_CONTROL_RQST)) == 0) // host PC application just turned off, go back into pedal UI mode
-		{
-			restoreFromHostUiMode = 1;
-			hostUiActive = 0;
-			PORTF &= ~BIT(USB_GP1_SPI_CONTROL_GRANTED);
-			//******************************************************************************
-			 //* make sure MCU takes control back (MCU input pin changed to high output pin)
-			 //* before USB releases it (USB high output pin changed to input pin).
-			 //*
-			 //*****************************************************************************
-
-			disableUsbSharedMemoryAccess();
-			enableMcuSharedMemorySectionAccess();
-		}*/
-	}
-
-
-
-	/*if(PIND & BIT(USB_SPI_CONTROL_RQST) == BIT(USB_SPI_CONTROL_RQST)) tempHostUiActive = 1;
-	else tempHostUiActive = 0;*/
-		//restoreFromHostUiMode = 1;
-
-
-	/*if(tempHostUiActive == 0 && hostUiActive == 1) // PC host has been deactivated
-	{
-		//comboIndex = atoi(comboIndexString);
-		restoreFromHostUiMode = 1;
-		//hostUiActive = 0;
-		PORTF &= ~BIT(USB_SPI_CONTROL_GRANTED);
-
-		//******************************************************************************
-		// * make sure MCU takes control back (MCU input pin changed to high output pin)
-		// * before USB releases it (USB high output pin changed to input pin).
-		// *
-		// *****************************************************************************
-
-		enableMcuSharedMemoryInterface();
-
-	}
-	else if (requestStatus == 0 && tempHostUiActive == 1 && hostUiActive == 0) // PC host has been activated
-	{
-		hostUiActive = 1;
-
-		PORTF |= BIT(USB_SPI_CONTROL_GRANTED);
-
-		//******************************************************************************
-		// * make sure USB takes control back (USB input pin changed to high output pin)
-		// * before MCU releases it (MCU high output pin changed to input pin).
-		// *
-		// *****************************************************************************
-
-		disableMcuSharedMemoryInterface();
-	}*/
 
 
 #endif
@@ -523,7 +396,7 @@ ISR(TIMER0_OVF_vect)
 	 *
 	 *****************************************************************************/
 	// Make sure MCU is in normal pedal UI mode before servicing new or current requests
-	if((newRequest == 1 || requestStatus != 0) /*&& (hostUiActive == 0) && (restoreFromHostUiMode == 0)*/)
+	if((newSpiXferRequest == 1 || requestStatus != 0) /*&& (hostUiActive == 0) && (restoreFromHostUiMode == 0)*/)
 	{
 		switch(requestStatus)
 		{
@@ -532,7 +405,7 @@ ISR(TIMER0_OVF_vect)
 				requestStatus = 1;
 				break;
 			case 1: // sending request
-				newRequest = 0;
+				newSpiXferRequest = 0;
 				statusRequestLoopCount++;
 				if(computeModuleDataSendState == 0)
 				{
@@ -672,53 +545,173 @@ ISR(TIMER0_OVF_vect)
 				sharedMemoryRxBufferCount = 0;
 				sharedMemoryTxBufferCount = 0;
 
-				if(getResponse == 0) requestStatus = 0;
+				/*if(getResponse == 0) requestStatus = 0;
 				else if(currentDataString[0] != 0) // status update from CM0 received
 				{
 					updateStatus();//updateParamValues();
 					//restoreFromHostUiMode = 1;
 					requestStatus = 0;
 				}
-				else requestStatus = 0; // regular non-status response received
-
+				else requestStatus = 0; // regular non-status response received*/
+				//requestStatus = 0;
 
 				break;
 			default:;
 		}
 	}
-#endif
-	/*else if(restoreFromHostUiMode == 0)//clear out old request data
+	else // NO TASKS ARE BEING PROCESSED, MCU IN IDLE STATE
 	{
-		newRequest = 0;
-		requestStatus = 0;
-		clearBuffer(sendBuffer,50);
-	}*/
-	/*if(statusRequestLoopCount >= 1000 && requestStatus != 0) // break a stuck cycle
-	{
-		//if(requestStatus == 4) requestStatus = 0;
-		//else requestStatus++;
-		statusRequestLoopCount = 0;
-	}*/
-	/************************* COMPUTE MODULE DATA PROCESSING *********************
-
-	if(computeModuleDataProcessingState == 0)
-	{
-		//idle
-	}
-	else if(computeModuleDataProcessingState == 1)// waiting
-	{
-		enableComputeModuleSharedMemorySectionAccess(0);
-		//computeModuleDataProcessingState = 1;
-		if(PINE & BIT(CM0_DATA_RXED)) // processing complete
+		if(currentDataUpdateTimer > CURRENT_DATA_UPDATE_TIMER_THRESHOLD)
 		{
-			computeModuleDataProcessingState = 2;
+			currentDataUpdateTimer = 0;
+			periodicTask = 1;	//requestStatusUpdateFromCM
+		}
+		else if(restoreFromHostUiMode == 0  && hostUiActive == 0) // normal pedal UI running mode
+		{
+			if(uiChange > 0)
+			{
+				clearBuffer(lcdBuffer[0], 20);
+				clearBuffer(lcdBuffer[1], 20);
+				// Update LCD Display from prior task output
+				// LINE 0
+				strncpy(lcdInitBuffer, nodeArray[currentComboNodeArrayIndex].name,10);
+				if(menuLevel > 0)
+				{
+					strncat(lcdInitBuffer, "->",2);
+					strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
+				}
+				if(menuLevel > 1)
+				{
+					strncat(lcdInitBuffer, "->",2);
+					strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
+				}
+				strncpy(lcdBuffer[0],lcdInitBuffer,19);
+
+				// LINE 1
+				if(menuLevel == 3)
+				{
+					updateParamValues();
+				}
+				// LINE 2
+				if(comboIndex == currentComboIndex)
+				{
+					strncpy(lcdBuffer[2], ofxMainStatusString,19);
+				}
+				else
+				{
+					ofxMainStatusString[0] = 0;
+				}
+
+				// LINE 3
+				if(menuLevel == 0)
+				{
+					strncpy(lcdBuffer[3], " Save",6);//nodeArray[currentComboNodeArrayIndex].name,10);
+				}
+				else if(menuLevel == 1)
+				{
+					updateSoftKeyLabels();
+				}
+				else if(menuLevel == 2)
+				{
+					updateSoftKeyLabels();
+				}
+				else if(menuLevel == 3)
+				{
+					lcdBuffer[3][0] = 0;
+				}
+
+				Display("","","","");
+				uiChange = 0;
+			}
+			// Read buttons
+
+			if((PINA & 0x7F) != 0) // for de-bouncing switches
+			{
+				if(buttonDebounceCount == 0)
+				{
+					//buttonDebounceCount++;
+					buttonPushed = 0;
+					//uiTempButtons = 0;
+				}
+				else if(buttonDebounceCount == 4)
+				{
+					buttonPushed = PINA;
+					//uiTempButtons = PINA;
+				}
+				buttonDebounceCount++;
+			}
+			else
+			{
+				buttonPushed = 0;
+				//uiTempButtons = 0;
+				buttonDebounceCount = 0;
+			}
+
+			if(((PING & BIT(MCU_POWER_CONTROL)) == 0) )
+			{
+				powerOffCount++;
+				if((powerOffCount > 100) && (powerOffEnable == 1))
+				{
+					// power off routine
+
+					powerOffSignal = 1;
+				}
+			}
+			else
+			{
+				powerOffCount = 0;
+			}
+
+			// Insert new tasks into task queue here
+			if(buttonPushed > 0)
+			{
+				if(menuLevel == 0)
+				{
+					if(buttonPushed == BIT(SOFT_KEY_1))
+					{
+						nonperiodicTask = 5; // saveCombo
+					}
+					else if(buttonPushed == BIT(SOFT_KEY_2))
+					{
+						//nonperiodicTask = 3; // utility
+					}
+					else if(buttonPushed == BIT(ROTARY_BUTTON))
+					{
+						nonperiodicTask = 4; // loadCombo
+					}
+					else if((buttonPushed == BIT(LCD_LEFT)) || (buttonPushed == BIT(LCD_RIGHT)))
+					{
+						nonperiodicTask = 2;	// browseComboTitles
+					}
+				}
+				else if((menuLevel == 1) || (menuLevel == 2))
+				{
+					nonperiodicTask = 6;	// browseComboEffectParameters
+				}
+				buttonPushed = 0;
+			}
+			else if((count_up == 1) || (count_down == 1))
+			{
+				nonperiodicTask = 7; //changeComboEffectParameter
+			}
+		}
+		else
+		{
+			if(strncmp(lcdBuffer[0],"PC GUI",6) != 0)
+			{
+				clearBuffer(lcdBuffer[0], 20);
+				clearBuffer(lcdBuffer[1], 20);
+				clearBuffer(lcdBuffer[2], 20);
+				clearBuffer(lcdBuffer[3], 20);
+				sprintf(lcdBuffer[0],"PC GUI enabled");
+				sprintf(lcdBuffer[1],"Pedal UI disabled");
+			}
 		}
 	}
-	else if(computeModuleDataProcessingState == 2)// processing is done
-	{
-		disableComputeModuleSharedMemorySectionAccess(0);//PORTF |= BIT(CM0_DATA_RDY);// set CM0_DATA_RDY line to high (inactive)
-	}*/
+	currentDataUpdateTimer++;
 
+	runTask = 1;
+#endif
 
 	//PORTD &= ~BIT(FSW_LED1);
 	//PORTD &= ~BIT(FSW_LED2);

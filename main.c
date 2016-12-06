@@ -23,6 +23,7 @@
 #include "JsonFuncts.h"
 #include "Events.h"
 #include "utilityFuncts.h"
+#include "Tasks.h"
 #define NULL 0
 /*const char *testJson =
 	"{\"title\":\"Combo 1\",\"effects\":"
@@ -55,7 +56,7 @@
 #define SHARED_MEMORY_SECTION_SIZE 4096
 #define MCU_SHARED_MEMORY_SECTION_INDEX 0
 #define CM0_SHARED_MEMORY_SECTION_INDEX 1
-
+#define TASK_QUEUE_SIZE 20
 #define CM0_PRESENT 1
 
 extern void breakButtonUi();
@@ -66,6 +67,8 @@ uint8_t rx_done;
 
 extern void delay(unsigned long delay);
 extern void clearBuffer(char *buffer, int length);
+void insertTask(uint8_t taskNumber);
+uint8_t getTask(void);
 
 void main(void)
 {
@@ -74,7 +77,7 @@ void main(void)
 	 uint8_t temp;
 	 unsigned int int_temp;
 	 unsigned long long_temp;
-
+	 uiButton = 0;
 	 //uint8_t LCD_change;
 	 //uint8_t new_val;
 	 //uint8_t buttonPushed,prev_buttonPushed;
@@ -93,7 +96,7 @@ void main(void)
 	 unsigned int addr1, addr2, data_in;
 	 unsigned int data_out;
 	 unsigned long word;*/
-	 newRequest = 0;
+	 newSpiXferRequest = 0;
 		/*struct _node *currentComboNode;
 		struct _node *currentEffectNode;
 		struct _node *currentParamNode;
@@ -195,6 +198,15 @@ void main(void)
 	 valueString[4] = 0;
 	 powerOffSignal = 0;
 	 newCombo = 1;
+	 count_dir = 0;
+	 taskWriteIndex = 0;
+	 taskReadIndex = 0;
+	 taskWriteIndexWrappedAround = 0;
+	 periodicTask = 0;
+	 nonperiodicTask = 0;
+	 nextNonperiodicTask = 0;
+	 runTask = 0;
+
 	 strncpy(testNode.abbr, "ABBR", 5);
 	 strncpy(testNode.name, "nodeName", 11);
 
@@ -202,12 +214,7 @@ void main(void)
 	 strcpy(debugString,"0000000000");
 
 
-	 //Display("      OFX     ","   WarpDrive   ","","");
-	 count_dir = 0;
-	 //instr_count = 0;
-	#if(dbgUi == 0)
-	#endif
-
+	 clearBuffer(taskQueue, 20);
 
 	 lcdBuffer[0][0] = 0;
 	 strcpy(lcdBuffer[1], "      OFX      ");
@@ -215,16 +222,6 @@ void main(void)
 	 lcdBuffer[3][0] = 0;
 
 	 Display("","","","");
-	 //delay(100000);
-	 /*while(1)
-	 {
-		 PORTF &= ~BIT(CM1_nSIG_BYPASS);
-
-		 delay(10);
-		 PORTF |= BIT(CM1_nSIG_BYPASS);
-		 PORTF |= BIT(CM2_DATA_RDY);
-		 delay(10);
-	 }*/
 
 #if CM0_PRESENT
 	 while((PINE & (BIT(CM_RUNNING0))) == 0);
@@ -246,17 +243,10 @@ void main(void)
 
 	 Display("","","","");
 
-	 char spiBuffer[20];
+
+	 /*char spiBuffer[20];
 	 clearBuffer(spiBuffer, 20);
 
-	 /*strncpy(lcdBuffer[0], "ampModel            ",19);
-	 clearBuffer(lcdBuffer[1], 20);
-	 strncpy(lcdBuffer[2], "combo running       ",19);
-	 strncpy(lcdBuffer[3], " Save              ",19);
-
-	 Display("","","","");*/
-	 //delay(100000);
-	 //clearSerialRam(0, 0, 1000);
 	 clearBuffer(jsonBuffer,JSON_BUFFER_SIZE);
 	 clearBuffer(sendBuffer,50);
 	 clearBuffer(getCombosBuffer,170);
@@ -264,6 +254,7 @@ void main(void)
 	 sharedMemoryRxStartAddress = MCU_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//CM0_SHARED_MEMORY_SECTION_ADDRESS;
 	 sharedMemoryTxBuffer = sendBuffer;
 	 sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
+*/
 	 SEI();
 #if !CM0_PRESENT
 	 while(powerOffSignal == 0)
@@ -271,14 +262,14 @@ void main(void)
 		 SPI_Tx(0x55);
 	 }
 #else
-	 strcpy(sendBuffer, "listCombos");
+	 /*strcpy(sendBuffer, "listCombos");
 	 sendBuffer[49] = 255;
 
 	 getResponse = 1;
-	 newRequest = 1;
+	 newSpiXferRequest = 1;
 	 //requestStatus = 1;
 	 while(requestStatus < 4); // wait for response to listCombos request
-	 requestStatus = 0;
+	 requestStatus = 0;*/
 	 lcdBuffer[0][0] = 0;
 	 strcpy(lcdBuffer[1], "      OFX      ");
 	 strcpy(lcdBuffer[2], "Starting up3...");
@@ -286,30 +277,110 @@ void main(void)
 
 	 Display("","","","");
 	 comboCount = 0;
-	 strcpy(comboTitle[comboCount], strtok(getCombosBuffer,","));
+	 getComboList();
+	 /*strcpy(comboTitle[comboCount], strtok(getCombosBuffer,","));
 
 	 while(comboTitle[comboCount][0] != 0 && comboCount < 10)
 	 {
 		 comboCount++;
 		 strcpy(comboTitle[comboCount], strtok(NULL,","));
-	 }
+	 }*/
 
-	 lcdBuffer[0][0] = 0;
+	 /*lcdBuffer[0][0] = 0;
 	 //strcpy(lcdBuffer[1], "-------------------"); // use this as width reference
 	 strcpy(lcdBuffer[1], "        OFX       ");
 	 strcpy(lcdBuffer[2], "loading init combo");
 	 lcdBuffer[3][0] = 0;
-	 //snprintf(lcdBuffer[3],18,"%d,%d,%d,%d,%d,%d,%d,%d,%d", comboTitle[0][0], comboTitle[0][1], comboTitle[0][2], comboTitle[0][3], comboTitle[0][4]
-	 //          , comboTitle[0][5], comboTitle[0][6], comboTitle[0][7], comboTitle[0][8]);
-	 Display("","","","");
+	 Display("","","","");*/
 
-	 getCombo(0);
+	 loadCombo();
 
+
+	 /*clearBuffer(lcdBuffer[0],19);
+	 clearBuffer(lcdBuffer[1],19);
+	 clearBuffer(lcdBuffer[2],19);
+	 clearBuffer(lcdBuffer[3],19);*/
 	 powerOffEnable = 1;
+	 nonperiodicTask = 0;
 	 while(powerOffSignal == 0) //while((PINE & (BIT(CM_RUNNING0))) != 0)
 	 {
+		 if(runTask == 1)
+		 {
+			 if(periodicTask > 0)
+			 {
+				 switch(periodicTask)
+				 {
+					 case 1:
+						 requestStatusUpdateFromCM();
+						 break;
+					 case 2:
+						 break;
+					 case 3:
+						 break;
+					 case 4:
+						 break;
+					 default:;
+				 }
+				 periodicTask = 0;
+			 }
+			 else if(nonperiodicTask > 0)
+			 {
+				 switch(nonperiodicTask)
+				 {
+					 case 1:
+						 getComboList();
+						 break;
+					 case 2:
+						 browseComboTitles();
+						 break;
+					 case 3:
+						 changeJackParameters();
+						 break;
+					 case 4:
+						 loadCombo();
+						 break;
+					 case 5:
+						 saveCombo();
+						 break;
+					 case 6:
+						 browseComboEffectParameters();
+						 break;
+					 case 7:
+						 changeComboEffectParameter();
+						 break;
+					 case 8:
+						 requestStatusUpdateFromCM();
+						 break;
+					 case 9:
 
-		 processPedalUI();
+						 break;
+					 case 10:
+						 testTask1();
+						 break;
+					 case 11:
+						 testTask2();
+						 break;
+					 case 12:
+						 testTask3();
+						 break;
+					 case 13:
+						 testTask4();
+						 break;
+
+					 default:;
+				 }
+				 if(nextNonperiodicTask == 0)
+					 nonperiodicTask = 0;
+				 else
+				 {
+					 nonperiodicTask = nextNonperiodicTask;
+					 nextNonperiodicTask = 0;
+				 }
+				 runTask = 0;
+			 }
+
+		 }
+		 /*processPedalUI();
 		 delay(20000);
 
 			//****************************************************************************
@@ -331,7 +402,8 @@ void main(void)
 			//Display(lcdBuffer[0], lcdBuffer[1], lcdBuffer[2], lcdBuffer[3]);
 			LCD_change = 0;
 			buttonPushed = 0;
-		}
+		}*/
+
 	}
 #endif
 	 lcdBuffer[0][0] = 0;
@@ -351,7 +423,7 @@ void main(void)
 			sharedMemoryTxStartAddress = CM0_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//MCU_SHARED_MEMORY_SECTION_ADDRESS;
 			getResponse = 1;
 			//requestStatus = 1;
-			newRequest = 1;
+			newSpiXferRequest = 1;
 			while(requestStatus < 4);
 	}
 	while((PINE & (BIT(CM_RUNNING0))) != 0);
@@ -365,4 +437,53 @@ void main(void)
 
 	 PORTG &= ~BIT(nPOWER_OFF);
 
+}
+
+
+void insertTask(uint8_t taskNumber)
+{
+	if(((taskReadIndex > 0) && (taskWriteIndex == taskReadIndex-1)) ||
+		((taskReadIndex == 0) && (taskWriteIndex == TASK_QUEUE_SIZE)))
+	{
+		// too many tasks in queue
+	}
+	else
+	{
+		taskQueue[taskWriteIndex] = taskNumber;
+
+		if(taskWriteIndex < TASK_QUEUE_SIZE)
+		{
+			taskWriteIndex++;
+		}
+		else
+		{
+			taskWriteIndexWrappedAround = 1;
+			taskWriteIndex = 0;
+		}
+	}
+}
+
+uint8_t getTask(void)
+{
+	uint8_t taskNumber = 0;
+
+	if((taskReadIndex < taskWriteIndex) || ((taskReadIndex == 0) && (taskWriteIndex == TASK_QUEUE_SIZE)))
+	{
+		taskNumber = taskQueue[taskReadIndex];
+		if(taskReadIndex < TASK_QUEUE_SIZE)
+		{
+			taskReadIndex++;
+		}
+		else
+		{
+			taskWriteIndexWrappedAround = 0;
+			taskReadIndex = 0;
+		}
+	}
+	else
+	{
+		// no tasks in queue
+	}
+
+	return taskNumber;
 }

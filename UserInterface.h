@@ -37,10 +37,13 @@ void CapInd(char *target, char *source, uint8_t select);
 void Display(uint8_t *line_1, uint8_t *line_2, uint8_t *line_3, uint8_t *line_4);
 void DisplayStatus(uint8_t *line3);
 
+void updateSoftKeyLabels(void);
 void getComboName(uint8_t index);
 void getCombo(uint8_t index);
-void saveCombo(void);
+uint8_t goDown(uint8_t index);
+uint8_t goUp();
+//void saveCombo(void);
 void processPedalUI(void);
-void updateParamValues(void);
-void updateStatus(void);
+uint8_t updateParamValues(void);
+uint8_t updateStatus(void);
 #endif /* USERINTERFACE_H_ */
