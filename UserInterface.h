@@ -46,4 +46,6 @@ uint8_t goUp();
 void processPedalUI(void);
 uint8_t updateParamValues(void);
 uint8_t updateStatus(void);
+
+uint8_t uiReady(void);
 #endif /* USERINTERFACE_H_ */

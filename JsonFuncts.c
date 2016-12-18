@@ -172,7 +172,7 @@ uint8_t getParamNode(char *string)
 	return tempTag;
 }*/
 
-int jsonBuffer2UiMenu(void)
+uint8_t jsonBuffer2UiMenu(void)
 {
 	uint8_t level = 0;
 
@@ -237,7 +237,7 @@ int jsonBuffer2UiMenu(void)
 	{
 		paramIndex2nodeArrayIndex[i] = 0;
 	}
-	while(!done && !jsonParseError)
+	while(done == 0 && jsonParseError == 0)
 	{
 
 		/************ information processing state machine ***********/
@@ -432,6 +432,6 @@ int jsonBuffer2UiMenu(void)
 	}*/
 	//sendDebugString();
 
-	return 0;
+	return jsonParseError;
 }
 

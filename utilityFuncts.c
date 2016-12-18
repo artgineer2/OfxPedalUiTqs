@@ -46,12 +46,12 @@ void fillBuffer(char *buffer, char *string, uint8_t length)
 {
 	uint8_t stringLength = strlen(string);
 
-	for(uint8_t i = 0; i <= length; i++)
+	for(uint8_t i = 0; i < length; i++)
 	{
 	  if('0'<=string[i] && string[i]<='z') buffer[i] = string[i];
 	  else buffer[i] = ' ';
 	}
-	buffer[length+1] = 0;
+	buffer[length] = 0;
 
 }
 

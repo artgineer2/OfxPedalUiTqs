@@ -16,6 +16,7 @@
 #include "IoLines.h"
 #include "ComputeModuleFuncts.h"
 #include "utilityFuncts.h"
+#include "UserInterface.h"
 
 //#define MCU_SHARED_MEMORY_SECTION_ADDRESS 0
 //#define CM0_SHARED_MEMORY_SECTION_ADDRESS 4096
@@ -27,8 +28,8 @@
 extern uint8_t rx_done;
 
 extern void delay(unsigned long delay);
-extern void updateParamValues(void);
-extern void updateStatus(void);
+//extern void updateParamValues(void);
+//extern void updateStatus(void);
 extern void insertTask(uint8_t taskNumber);
 extern uint8_t getTask(void);
 
@@ -215,6 +216,7 @@ ISR(TIMER0_OVF_vect)
 {
 	uint8_t command = 0;
 	static uint8_t fswDebounceCount;
+	static uint8_t uiBtn;
 	static int statusRequestLoopCount;
 	static powerOffCount;
 	PORTE &= ~BIT(nMCU_DATA_RDY1);
@@ -283,6 +285,15 @@ ISR(TIMER0_OVF_vect)
 	}*/
 #endif
 
+	// ************ Enable rotary encoder EXT interrupts only if menuLevel = 3
+	if(menuLevel == 3)
+	{
+		EIMSK = 0x01; /*enable Ext interrupt*/
+	}
+	else
+	{
+		EIMSK = 0x00; /*disable Ext interrupt*/
+	}
 #if 1
 	/**********************************************************************
 	 *
@@ -396,6 +407,85 @@ ISR(TIMER0_OVF_vect)
 	 *
 	 *****************************************************************************/
 	// Make sure MCU is in normal pedal UI mode before servicing new or current requests
+
+	if(uiChange > 0)
+	{
+		if(hostUiActive == 0)
+		{
+
+			clearBuffer(lcdBuffer[0], 20);
+			clearBuffer(lcdBuffer[1], 20);
+			// Update LCD Display from prior task output
+			// ***************************** LINE 0 **********************************
+			strncpy(lcdInitBuffer, nodeArray[currentComboNodeArrayIndex].name,10);
+			if(menuLevel == 2)
+			{
+				strncat(lcdInitBuffer, "->",2);
+				//strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
+				strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
+			}
+			else if(menuLevel == 3)
+			{
+				strncat(lcdInitBuffer, "->",2);
+				strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
+				strncat(lcdInitBuffer, "->",2);
+				strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
+			}
+			strncpy(lcdBuffer[0],lcdInitBuffer,19);
+
+			// ***************************** LINE 1 *****************************
+			if(menuLevel == 3)
+			{
+				updateParamValues();
+				//snprintf(lcdBuffer[1],19,"%d:%d:%d  %d", comboIndex, currentComboIndex,menuLevel,paramCount);
+
+			}
+			// ***************************** LINE 2 *****************************
+			if(menuLevel == 0)//(comboIndex == currentComboIndex)
+			{
+
+				strncpy(lcdBuffer[2], ofxMainStatusString,19);
+			}
+			else
+			{
+				lcdBuffer[2][0] = 0;
+			}
+
+			// ***************************** LINE 3 *****************************
+			if(menuLevel == 0)
+			{
+				strncpy(lcdBuffer[3], " Save",6);//nodeArray[currentComboNodeArrayIndex].name,10);
+			}
+			else if(menuLevel == 1)
+			{
+				updateSoftKeyLabels();
+			}
+			else if(menuLevel == 2)
+			{
+				updateSoftKeyLabels();
+			}
+			else if(menuLevel == 3)
+			{
+				lcdBuffer[3][0] = 0;
+			}
+
+		}
+		else
+		{
+			//if(strncmp(lcdBuffer[0],"PC GUI",6) != 0)
+			{
+				clearBuffer(lcdBuffer[0], 20);
+				clearBuffer(lcdBuffer[1], 20);
+				clearBuffer(lcdBuffer[2], 20);
+				clearBuffer(lcdBuffer[3], 20);
+				sprintf(lcdBuffer[0],"PC GUI enabled");
+				sprintf(lcdBuffer[1],"Pedal UI disabled");
+			}
+		}
+		Display("","","","");
+		uiChange = 0;
+	}
+
 	if((newSpiXferRequest == 1 || requestStatus != 0) /*&& (hostUiActive == 0) && (restoreFromHostUiMode == 0)*/)
 	{
 		switch(requestStatus)
@@ -565,85 +655,37 @@ ISR(TIMER0_OVF_vect)
 		{
 			currentDataUpdateTimer = 0;
 			periodicTask = 1;	//requestStatusUpdateFromCM
+			runTask = 1;
 		}
 		else if(restoreFromHostUiMode == 0  && hostUiActive == 0) // normal pedal UI running mode
 		{
-			if(uiChange > 0)
-			{
-				clearBuffer(lcdBuffer[0], 20);
-				clearBuffer(lcdBuffer[1], 20);
-				// Update LCD Display from prior task output
-				// LINE 0
-				strncpy(lcdInitBuffer, nodeArray[currentComboNodeArrayIndex].name,10);
-				if(menuLevel > 0)
-				{
-					strncat(lcdInitBuffer, "->",2);
-					strncat(lcdInitBuffer, nodeArray[nodeArray[currentNodeArrayIndex].up].abbr,4);
-				}
-				if(menuLevel > 1)
-				{
-					strncat(lcdInitBuffer, "->",2);
-					strncat(lcdInitBuffer, nodeArray[currentNodeArrayIndex].abbr,4);
-				}
-				strncpy(lcdBuffer[0],lcdInitBuffer,19);
-
-				// LINE 1
-				if(menuLevel == 3)
-				{
-					updateParamValues();
-				}
-				// LINE 2
-				if(comboIndex == currentComboIndex)
-				{
-					strncpy(lcdBuffer[2], ofxMainStatusString,19);
-				}
-				else
-				{
-					ofxMainStatusString[0] = 0;
-				}
-
-				// LINE 3
-				if(menuLevel == 0)
-				{
-					strncpy(lcdBuffer[3], " Save",6);//nodeArray[currentComboNodeArrayIndex].name,10);
-				}
-				else if(menuLevel == 1)
-				{
-					updateSoftKeyLabels();
-				}
-				else if(menuLevel == 2)
-				{
-					updateSoftKeyLabels();
-				}
-				else if(menuLevel == 3)
-				{
-					lcdBuffer[3][0] = 0;
-				}
-
-				Display("","","","");
-				uiChange = 0;
-			}
 			// Read buttons
 
-			if((PINA & 0x7F) != 0) // for de-bouncing switches
+			if(((PINA & 0x7F) != 0)) // for de-bouncing switches
 			{
-				if(buttonDebounceCount == 0)
+				if(uiBtn == 0) // one-push-one-action functioning
 				{
-					//buttonDebounceCount++;
-					buttonPushed = 0;
-					//uiTempButtons = 0;
+					if(buttonDebounceCount == 0)
+					{
+						//buttonDebounceCount++;
+						buttonPushed = 0;
+						//uiTempButtons = 0;
+					}
+					else if(buttonDebounceCount < 2)
+					{
+						buttonPushed = PINA;
+						uiBtn = 1;
+						//uiTempButtons = PINA;
+					}
+					buttonDebounceCount++;
 				}
-				else if(buttonDebounceCount == 4)
-				{
-					buttonPushed = PINA;
-					//uiTempButtons = PINA;
-				}
-				buttonDebounceCount++;
+
 			}
 			else
 			{
 				buttonPushed = 0;
 				//uiTempButtons = 0;
+				uiBtn = 0;
 				buttonDebounceCount = 0;
 			}
 
@@ -677,40 +719,51 @@ ISR(TIMER0_OVF_vect)
 					}
 					else if(buttonPushed == BIT(ROTARY_BUTTON))
 					{
-						nonperiodicTask = 4; // loadCombo
+						//if(menuLevel == 0)
+						{
+							if(comboIndex != currentComboIndex)
+								nonperiodicTask = 4; // loadCombo
+							else
+								buttonPushed = 0; // no task assigned, so reset to 0
+						}
+						menuLevel = 1;
 					}
 					else if((buttonPushed == BIT(LCD_LEFT)) || (buttonPushed == BIT(LCD_RIGHT)))
 					{
 						nonperiodicTask = 2;	// browseComboTitles
 					}
 				}
-				else if((menuLevel == 1) || (menuLevel == 2))
+				else if((menuLevel == 1))
+				{
+					//uiChange = 1;
+					if(buttonPushed == BIT(ROTARY_BUTTON))
+					{
+						menuLevel = 0;
+						buttonPushed = 0; // no task assigned, so reset to 0
+					}
+					else
+					{
+						nonperiodicTask = 6;	// browseComboEffectParameters
+					}
+				}
+				else
 				{
 					nonperiodicTask = 6;	// browseComboEffectParameters
 				}
-				buttonPushed = 0;
+				runTask = 1;
+				uiChange = 1;
 			}
 			else if((count_up == 1) || (count_down == 1))
 			{
 				nonperiodicTask = 7; //changeComboEffectParameter
-			}
-		}
-		else
-		{
-			if(strncmp(lcdBuffer[0],"PC GUI",6) != 0)
-			{
-				clearBuffer(lcdBuffer[0], 20);
-				clearBuffer(lcdBuffer[1], 20);
-				clearBuffer(lcdBuffer[2], 20);
-				clearBuffer(lcdBuffer[3], 20);
-				sprintf(lcdBuffer[0],"PC GUI enabled");
-				sprintf(lcdBuffer[1],"Pedal UI disabled");
+				runTask = 1;
+				uiChange = 1;
 			}
 		}
 	}
 	currentDataUpdateTimer++;
 
-	runTask = 1;
+
 #endif
 
 	//PORTD &= ~BIT(FSW_LED1);

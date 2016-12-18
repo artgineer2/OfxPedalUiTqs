@@ -126,7 +126,7 @@ void config_chip(void)
  MCUCR = 0x00;
  EICRA = 0x01; // enable active any-edge INT0
  //EICRA = 0x02; /*enable active falling-edge INT0 */
- EIMSK = 0x01; /*enable Ext interrupt*/
+ //EIMSK = 0x01; /*enable Ext interrupt (now done in Events.c, lines 288-296*/
  //TIMSK0 = 0x00; /*timer interrupt sources*/
  TIMSK1 = 0x00;
  TIMSK2 = 0x00;

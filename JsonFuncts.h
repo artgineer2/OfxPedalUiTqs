@@ -14,7 +14,7 @@
 #include <ctype.h>
 #include <avr/pgmspace.h>
 #include "macros.h"
-int jsonBuffer2UiMenu(void);
+uint8_t jsonBuffer2UiMenu(void);
 
 
 

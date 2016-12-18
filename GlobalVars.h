@@ -88,8 +88,26 @@ uint8_t softkeyStringFrameIndex[2];
 uint8_t softkeyStringFrameCount;
 uint8_t uiChange; 	// 0: no buttons pressed
 					// 1: button pressed, LCD not updated
-					// 2: ??
+					// 2: button released, LCD not updated
+					// 3: button not released, LCD updated
+					// 4: button released, LCD updated
+
+
+/*****************************************************************
+ * 	Notes:
+ *		When button is physically released, "buttons" only goes from
+ *		"button pressed" to "no buttons pressed" AFTER "lcd" goes from
+ *		"no new data" to "new data".
+ *
+ */
+struct {
+	uint8_t buttons; // 0: no buttons pressed, 1: button pressed
+	uint8_t lcd; 	// 0: no new data, 1: new data, 2: LCD updated
+} uiStatus;
+
+
 char ofxMainStatusString[20];
+uint8_t error;
 /**********************************************************/
 
 uint8_t rx_model;
@@ -129,7 +147,7 @@ uint8_t requestStatus; //0: Idle, 1: Sending Request, 2: Waiting for response, 3
 uint8_t newSpiXferRequest;
 uint8_t responseError;
 uint8_t getResponse;
-
+uint8_t paramCount;
 struct _node{
 	uint8_t nodeType; // 0=comb0, 1=effect, 2=parameter
 	char abbr[4];
@@ -161,7 +179,7 @@ uint8_t currentEffectNodeArrayIndex;
 uint8_t currentParamNodeArrayIndex;
 uint16_t nodeAddress;
 
-char comboTitle[10][11];
+char comboTitle[15][11];
 uint8_t comboIndex;
 uint8_t currentComboIndex;
 uint8_t comboCount;

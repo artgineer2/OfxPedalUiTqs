@@ -123,9 +123,9 @@ void main(void)
 
 	 /********** Reset CM **********/
 
-	 /*PORTG &= ~BIT(CMX_RUN);
+	 PORTG &= ~BIT(CMX_RUN);
 	 delay(10000);
-	 PORTG |= BIT(CMX_RUN);*/
+	 PORTG |= BIT(CMX_RUN);
 
 	 LCD_init();
 	  //param_lut_flash_pointer_init(0);
@@ -329,6 +329,11 @@ void main(void)
 				 {
 					 case 1:
 						 getComboList();
+						 if(restoreFromHostUiMode == 1)
+						 {
+							 nextNonperiodicTask = 4;
+							 restoreFromHostUiMode = 0;
+						 }
 						 break;
 					 case 2:
 						 browseComboTitles();
@@ -338,6 +343,7 @@ void main(void)
 						 break;
 					 case 4:
 						 loadCombo();
+						 restoreFromHostUiMode = 0;
 						 break;
 					 case 5:
 						 saveCombo();
@@ -348,25 +354,6 @@ void main(void)
 					 case 7:
 						 changeComboEffectParameter();
 						 break;
-					 case 8:
-						 requestStatusUpdateFromCM();
-						 break;
-					 case 9:
-
-						 break;
-					 case 10:
-						 testTask1();
-						 break;
-					 case 11:
-						 testTask2();
-						 break;
-					 case 12:
-						 testTask3();
-						 break;
-					 case 13:
-						 testTask4();
-						 break;
-
 					 default:;
 				 }
 				 if(nextNonperiodicTask == 0)
@@ -377,6 +364,7 @@ void main(void)
 					 nextNonperiodicTask = 0;
 				 }
 				 runTask = 0;
+				 buttonPushed = 0;
 			 }
 
 		 }

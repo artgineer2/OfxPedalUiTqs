@@ -23,7 +23,6 @@ extern void clearBuffer(char *buffer, int length);
 
 #define dbgUi 0
 extern const char *testJson;
-//uint8_t uiBtn;
 
 /*static void breakButtonUi(char *buffer1, char *buffer2, char *buffer3, char *buffer4)
 {
@@ -513,7 +512,7 @@ void updateSoftKeyLabels(void)
 		}
 		else
 		{
-			uint8_t paramCount = 0;
+			paramCount = 0;
 			clearBuffer(softkeyString,100);
 			for( ; (tempNodeIndexArray != 255); tempNodeIndexArray = nodeArray[tempNodeIndexArray].right)
 			{
@@ -532,10 +531,11 @@ void updateSoftKeyLabels(void)
 
 }
 
+
+
 void getComboName(uint8_t index)
 {
 	menuLevel = 0;
-	//uiBtn = BIT(CHANGE_COMBO);
 	strcpy(nodeArray[0].name, comboTitle[index]);
 }
 
@@ -544,7 +544,6 @@ void getCombo(uint8_t index)
 {
 	powerOffEnable = 0;
 	debugString[0] = '1';
-	//strcpy(nodeArray[0].name, comboTitle[index]);
 	//send "getCombo" request to OfxMain via shared memory
 	clearBuffer(jsonBuffer,JSON_BUFFER_SIZE);
 	clearBuffer(sendBuffer,50);
@@ -559,20 +558,14 @@ void getCombo(uint8_t index)
 	sharedMemoryRxBuffer = jsonBuffer;  // set sharedMemory pointer to jsonBuffer array
 	sharedMemoryRxStartAddress = MCU_SHARED_MEMORY_SECTION_INDEX*SHARED_MEMORY_SECTION_SIZE;//CM0_SHARED_MEMORY_SECTION_ADDRESS;
 	getResponse = 1;
-	//while(requestStatus != 0);
+	menuLevel = 0;
 	newSpiXferRequest = 1;
-	//requestStatus = 1;
-	//clearBuffer(lcdBuffer[2],20);
-	//strncpy(lcdBuffer[2],"loading combo", 19);
 	strncpy(ofxMainStatusString,"loading combo", 19);
-	//Display(0,0,0,0);
+	uiChange = 1;
 	while(requestStatus < 4); // wait for response to getCombo request
 	requestStatus = 0;
-	//parse combo data into node array
-	//clearSerialRam(0, 0, 1000);
-	menuLevel = 0;
-	loadMenu = 1;
 	powerOffEnable = 1;
+	uiChange = 1;
 	//LCD_change = 1;
 }
 
@@ -969,16 +962,9 @@ uint8_t updateStatus(void)
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
 
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
-	/*strtok(parsedCurrentDataString[1],":");
-	char *intString;
-	for(int i = 0; i < 20; i++)
-	{
-		intString = strtok(NULL,",");
-		if(intString == 0) break;
-		nodeArray[paramIndex2nodeArrayIndex[i]].value = atoi(intString);
-	}*/
 
-	//if(comboIndex == currentComboIndex && menuLevel == 0)
+
+	if(comboIndex == currentComboIndex && menuLevel == 0)
 	{
 		strtok(parsedCurrentDataString[1],":");
 		strncpy(tempOfxMainStatusString,strtok(NULL,"\0"),15);
@@ -988,10 +974,7 @@ uint8_t updateStatus(void)
 			uiChange = 1;//LCD_change = 1;
 		}
 		//strncpy(lcdBuffer[2], ofxMainStatusString,19);
-
 	}
-
-
 	//strcpy(parsedCurrentDataString, strtok(currentDataString,"|"));
 	strtok(parsedCurrentDataString[2],":");
 	tempHostUiActive = atoi(strtok(NULL,"\0"));
@@ -999,15 +982,27 @@ uint8_t updateStatus(void)
 	{
 		comboIndex = atoi(comboIndexString);
 		restoreFromHostUiMode = 1;
+		nonperiodicTask = 1;  //getComboList
 		hostUiActive = 0;
+		uiChange = 1;
 	}
 	else if (tempHostUiActive == 1 && hostUiActive == 0) // web app has been activated
 	{
 		hostUiActive = 1;
-
+		uiChange = 1;
 	}
 	for(uint8_t i = 0; i < 100; i++) currentDataString[i] = 0;
 
 	return status;
 
+}
+
+
+uint8_t uiReady(void)
+{
+	uint8_t status = 0;
+
+	if((uiStatus.buttons == 2) && (uiStatus.lcd == 2)) // buttons are released and LCD is updated
+		status = 1;
+	return status;
 }
