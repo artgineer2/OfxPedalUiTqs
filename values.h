@@ -1,4 +1,18 @@
-#include <avr/pgmspace.h>
+
+
+#ifndef VALUES_H_
+#define VALUES_H_
+
+//#include <avr/pgmspace.h>
+
+#define PGM_P const char *
+
+
+
+#define PROGMEM __attribute__((__progmem__))
+extern void *memcpy_P(void *, const void *, size_t);
+extern char *strncpy_P(char *, const char *, size_t);
+
 const char amp_0[] PROGMEM = "0.005";
 const char amp_1[] PROGMEM = "0.04";
 const char amp_2[] PROGMEM = "0.08";
@@ -599,3 +613,5 @@ time_96,
 time_97,
 time_98,
 time_99};
+
+#endif

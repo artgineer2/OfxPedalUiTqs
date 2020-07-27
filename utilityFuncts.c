@@ -5,9 +5,8 @@
  *      Author: mike
  */
 
-#include <avr/pgmspace.h>
-#include <avr/interrupt.h>
-#include "GlobalVars.h"
+//#include <avr/pgmspace.h>
+//#include <avr/interrupt.h>
 #include "macros.h"
 #include "utilityFuncts.h"
 
@@ -22,29 +21,11 @@ void delay(unsigned long delay)
  }
 }
 
-void clearBuffer(char *buffer, int length)
-{
-	uint16_t index;
 
-	for(index = 0; index < length; index++)
-	{
-		buffer[index] = 0;
-	}
-}
-
-void clearTextBuffer(char *buffer, int length)
-{
-	uint16_t index;
-
-	for(index = 0; index < length; index++)
-	{
-		buffer[index] = ' ';
-	}
-}
 
 void fillBuffer(char *buffer, char *string, uint8_t length)
 {
-	uint8_t stringLength = strlen(string);
+
 
 	for(uint8_t i = 0; i < length; i++)
 	{
